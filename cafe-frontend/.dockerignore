@@ -1,0 +1,13 @@
+node_modules
+.vite
+.dist
+build
+dist
+.git
+.gitignore
+.vscode
+.DS_Store
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+.env

@@ -1,0 +1,76 @@
+{
+  "info": {
+    "name": "Cafe Backend - Reports",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "cafe-backend-reports-collection"
+  },
+  "item": [
+    {
+      "name": "Daily Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/reports/daily?date={{date}}&zone={{zone}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "admin", "reports", "daily" ],
+          "query": [
+            { "key": "date", "value": "{{date}}" },
+            { "key": "zone", "value": "{{zone}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Range Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/reports/range?start={{start}}&end={{end}}&zone={{zone}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "admin", "reports", "range" ],
+          "query": [
+            { "key": "start", "value": "{{start}}" },
+            { "key": "end", "value": "{{end}}" },
+            { "key": "zone", "value": "{{zone}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Top Products",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/reports/top-products?start={{start}}&end={{end}}&limit={{limit}}&zone={{zone}}",
+          "host": [ "{{baseUrl}}" ],
+          "path": [ "api", "admin", "reports", "top-products" ],
+          "query": [
+            { "key": "start", "value": "{{start}}" },
+            { "key": "end", "value": "{{end}}" },
+            { "key": "limit", "value": "{{limit}}" },
+            { "key": "zone", "value": "{{zone}}" }
+          ]
+        }
+      }
+    }
+  ],
+  "event": [],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "date", "value": "2025-01-01" },
+    { "key": "start", "value": "2025-01-01" },
+    { "key": "end", "value": "2025-01-31" },
+    { "key": "limit", "value": "10" },
+    { "key": "zone", "value": "Asia/Ho_Chi_Minh" }
+  ]
+}
