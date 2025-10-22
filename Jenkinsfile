@@ -3,7 +3,6 @@ pipeline {
 
   options {
     timestamps()
-    ansiColor('xterm')
   }
 
   parameters {
@@ -27,7 +26,18 @@ pipeline {
           }
           echo "Using TAG=${env.TAG}"
         }
-        sh 'docker --version && docker compose version || true'
+        sh '''
+          set -e
+          docker --version || true
+          if docker compose version >/dev/null 2>&1; then
+            docker compose version
+          elif docker-compose version >/dev/null 2>&1; then
+            docker-compose version
+          else
+            echo "Docker Compose not found (v2 or v1). Please install 'docker compose' or 'docker-compose'." >&2
+            exit 1
+          fi
+        '''
       }
     }
 
@@ -42,16 +52,26 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
           sh '''
             set -e
+            # pick compose command (v2 preferred)
+            COMPOSE="docker compose"
+            if ! docker compose version >/dev/null 2>&1; then
+              if docker-compose version >/dev/null 2>&1; then
+                COMPOSE="docker-compose"
+              else
+                echo "Docker Compose not found (v2 or v1)." >&2; exit 1
+              fi
+            fi
+
             echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
 
             export TAG="${TAG}"
             export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
 
             echo "Building images with TAG=$TAG for user=$DOCKERHUB_USERNAME"
-            docker compose build backend frontend
+            $COMPOSE build backend frontend
 
             echo "Pushing images"
-            docker compose push backend frontend
+            $COMPOSE push backend frontend
           '''
         }
       }
@@ -65,13 +85,23 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
           sh '''
             set -e
+            # pick compose command (v2 preferred)
+            COMPOSE="docker compose"
+            if ! docker compose version >/dev/null 2>&1; then
+              if docker-compose version >/dev/null 2>&1; then
+                COMPOSE="docker-compose"
+              else
+                echo "Docker Compose not found (v2 or v1)." >&2; exit 1
+              fi
+            fi
+
             # Ensure env available for compose interpolation
             export TAG="${TAG}"
             export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
 
             # Pull and run published images on this host
-            docker compose -f docker-compose.release.yml pull
-            docker compose -f docker-compose.release.yml up -d
+            $COMPOSE -f docker-compose.release.yml pull
+            $COMPOSE -f docker-compose.release.yml up -d
           '''
         }
       }
