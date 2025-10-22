@@ -48,6 +48,30 @@ On the target machine:
    - docker compose -f docker-compose.release.yml pull
    - docker compose -f docker-compose.release.yml up -d
 
+   ## Jenkins (CentOS) pipeline
+
+   We include a `Jenkinsfile` that:
+   - Builds backend and frontend Docker images via compose
+   - Pushes to Docker Hub using Jenkins credentials
+   - Optionally deploys using `docker-compose.release.yml` on the Jenkins agent
+
+   Prerequisites on the Jenkins (CentOS) node:
+   - Docker Engine + Docker Compose v2 (`docker compose`)
+   - Jenkins agent user is in the `docker` group or can run `docker` with sudo (adjust pipeline if sudo is required)
+
+   Jenkins setup:
+   1. Create Credentials of type “Username with password” with ID: `dockerhub`
+      - Username: your Docker Hub username
+      - Password: your Docker Hub password or PAT
+   2. Create a Multibranch Pipeline or Pipeline job pointing to this repo.
+   3. Parameters:
+      - TAG (string): leave blank to auto-use `build-${BUILD_NUMBER}`
+      - DEPLOY (boolean): if true, the job will pull and run the images on the agent using `docker-compose.release.yml`.
+
+   Notes:
+   - The compose files interpolate `DOCKERHUB_USERNAME` and `TAG` from environment; the pipeline exports them before running compose.
+   - To pass app secrets (e.g., Mongo URI, JWT secret), set them in a `.env` file present on the agent workspace or export them in Jenkins node env, as `docker-compose.release.yml` will read from environment.
+
 ## Configuration (.env)
 You can override these:
 
