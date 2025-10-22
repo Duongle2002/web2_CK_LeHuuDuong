@@ -8,6 +8,7 @@ pipeline {
   parameters {
     string(name: 'TAG', defaultValue: '', description: 'Docker image tag (leave empty to use build number)')
     booleanParam(name: 'DEPLOY', defaultValue: true, description: 'Pull and run containers on this Jenkins agent after push')
+    booleanParam(name: 'PUSH', defaultValue: false, description: 'If true, push images to Docker Hub and deploy from registry; if false, build and run locally.')
   }
 
   environment {
@@ -47,10 +48,10 @@ pipeline {
       }
     }
 
-    stage('Docker Login + Build + Push') {
+    stage('Build (and push if requested)') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
-          sh '''
+        script {
+          def shell = '''
             set -e
             # pick compose command (v2 preferred)
             COMPOSE="docker compose"
@@ -61,31 +62,44 @@ pipeline {
                 echo "Docker Compose not found (v2 or v1)." >&2; exit 1
               fi
             fi
-
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-
-            export TAG="${TAG}"
-            export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
-
-            echo "Building images with TAG=$TAG for user=$DOCKERHUB_USERNAME"
-            $COMPOSE build backend frontend
-
-            echo "Pushing images"
-            $COMPOSE push backend frontend
           '''
+
+          if (params.PUSH) {
+            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+              sh """
+                ${shell}
+                echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+                export TAG="${TAG}"
+                export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
+
+                echo "Building images with TAG=$TAG for user=$DOCKERHUB_USERNAME"
+                $COMPOSE build backend frontend
+
+                echo "Pushing images"
+                $COMPOSE push backend frontend
+              """
+            }
+          } else {
+            // Local build without registry (no image tags)
+            sh """
+              ${shell}
+              echo "Local build using docker-compose.local.yml (no push)"
+              $COMPOSE -f docker-compose.local.yml build backend frontend
+            """
+          }
         }
       }
     }
 
-    stage('Deploy (compose release)') {
+    stage('Deploy') {
       when {
         expression { return params.DEPLOY }
       }
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
-          sh '''
+        script {
+          def shell = '''
             set -e
-            # pick compose command (v2 preferred)
             COMPOSE="docker compose"
             if ! docker compose version >/dev/null 2>&1; then
               if docker-compose version >/dev/null 2>&1; then
@@ -94,15 +108,25 @@ pipeline {
                 echo "Docker Compose not found (v2 or v1)." >&2; exit 1
               fi
             fi
-
-            # Ensure env available for compose interpolation
-            export TAG="${TAG}"
-            export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
-
-            # Pull and run published images on this host
-            $COMPOSE -f docker-compose.release.yml pull
-            $COMPOSE -f docker-compose.release.yml up -d
           '''
+
+          if (params.PUSH) {
+            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+              sh """
+                ${shell}
+                export TAG="${TAG}"
+                export DOCKERHUB_USERNAME="$DOCKERHUB_USERNAME"
+                $COMPOSE -f docker-compose.release.yml pull
+                $COMPOSE -f docker-compose.release.yml up -d
+              """
+            }
+          } else {
+            // Local deploy using locally built images
+            sh """
+              ${shell}
+              $COMPOSE -f docker-compose.local.yml up -d
+            """
+          }
         }
       }
     }

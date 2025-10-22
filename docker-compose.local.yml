@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  backend:
+    build: ./cafe-backend
+    env_file:
+      - ./.env
+    environment:
+      SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI:-mongodb://mongo:27017/cafe-backend}
+      APP_JWTSECRET: ${APP_JWTSECRET:-changemechangemechangemechangemechangeme}
+      APP_JWTEXPIRATIONMS: ${APP_JWTEXPIRATIONMS:-86400000}
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+  frontend:
+    build: ./cafe-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+volumes:
+  mongo-data:
