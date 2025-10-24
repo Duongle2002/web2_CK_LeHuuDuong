@@ -57,8 +57,10 @@ const dictionaries = {
       lineTotal: 'Line total',
       total: 'Total',
       guests: 'Guests',
+      backOrders: 'Back to Orders',
       backHome: 'Back to Home',
-      print: 'Print'
+      print: 'Print',
+      pay: 'Pay'
     }
   },
   vn: {
@@ -115,8 +117,10 @@ const dictionaries = {
       lineTotal: 'Thành tiền',
       total: 'Tổng cộng',
       guests: 'Số khách',
+      backOrders: 'Về đơn hàng',
       backHome: 'Về trang chủ',
-      print: 'In'
+      print: 'In',
+      pay: 'Thanh toán'
     }
   }
 }

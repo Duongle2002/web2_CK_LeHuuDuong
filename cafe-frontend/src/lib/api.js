@@ -39,6 +39,7 @@ export function createApi(getToken) {
     listPublicProducts: () => request('/api/products'),
     createProduct: (payload) => request('/api/admin/products', { method: 'POST', body: payload }),
     updateProduct: (id, payload) => request(`/api/admin/products/${id}`, { method: 'PUT', body: payload }),
+  deleteProduct: (id) => request(`/api/admin/products/${id}`, { method: 'DELETE' }),
 
     // Tables
   listTables: () => request('/api/tables'),

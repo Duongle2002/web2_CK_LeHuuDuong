@@ -55,4 +55,11 @@ public class ProductService {
         p.setUpdatedAt(Instant.now());
         return productRepository.save(p);
     }
+
+    public void delete(String id) {
+        if (!productRepository.existsById(id)) {
+            throw new ResponseStatusException(NOT_FOUND, "Product not found");
+        }
+        productRepository.deleteById(id);
+    }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useI18n } from '../context/I18nContext.jsx'
 
@@ -7,7 +8,11 @@ export default function Orders() {
   const { t } = useI18n()
   const [error, setError] = useState('')
   const [myOrders, setMyOrders] = useState([])
+  // Tables reserved by current user (status = RESERVED)
   const [myTables, setMyTables] = useState([])
+  // All tables (public list) to resolve table names and detect occupied tables by my open orders
+  const [allTables, setAllTables] = useState([])
+  const navigate = useNavigate()
   const [allOrders, setAllOrders] = useState([])
   const [adminTables, setAdminTables] = useState([])
   const [onlyOpen, setOnlyOpen] = useState(true)
@@ -26,12 +31,15 @@ export default function Orders() {
           setAllOrders(orders)
           setAdminTables(tables)
         } else {
-          const [os, ts] = await Promise.all([
+          // For normal users, load: my orders, my reserved tables, and all tables
+          const [os, ts, ats] = await Promise.all([
             api.request('/api/orders/my'),
             api.listMyTables(),
+            api.listTables(),
           ])
           setMyOrders(os)
           setMyTables(ts)
+          setAllTables(ats)
         }
       } catch (e) { setError(e.message) }
     }
@@ -39,7 +47,11 @@ export default function Orders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, onlyOpen])
 
-  const tableName = (id) => myTables.find(t => (t.id||t._id) === id)?.name || 'Table'
+  // Prefer resolving name from the full table list; fall back to simple label
+  const tableName = (id) => {
+    const t = (allTables?.length ? allTables : myTables).find(t => (t.id||t._id) === id)
+    return t ? (t.name || t.tableNumber || 'Table') : 'Table'
+  }
   const adminTableName = (id) => {
     const t = adminTables.find(t => (t.id||t._id) === id)
     return t ? (t.name || t.tableNumber || 'Table') : id
@@ -153,17 +165,59 @@ export default function Orders() {
 
       <div className="mb-3">
         <h5>{t.orders.myTables}</h5>
-        {!myTables.length ? (
-          <div className="text-muted">{t.orders.youHaveNoTables}</div>
-        ) : (
-          <ul className="list-group">
-            {myTables.map(t => (
-              <li className="list-group-item" key={t.id || t._id}>
-                {(t.name || t.tableNumber || 'Table')} - {t.status}
-              </li>
-            ))}
-          </ul>
-        )}
+        {(() => {
+          // Consider tables I'm reserving OR tables of my open (unpaid & not cancelled) orders
+          const openOrders = myOrders.filter(o => {
+            const pay = o.paymentStatus || (o.paidAt ? 'PAID' : 'UNPAID')
+            const status = o.status || o.fulfillmentStatus || 'PENDING'
+            return pay !== 'PAID' && status !== 'CANCELLED'
+          })
+          const occupiedByMe = openOrders
+            .map(o => (allTables || []).find(t => (t.id || t._id) === o.tableId))
+            .filter(Boolean)
+
+          // merge unique by id with reserved tables (myTables)
+          const map = new Map()
+          ;[...(myTables || []), ...occupiedByMe].forEach(t => map.set(t.id || t._id, t))
+          const held = Array.from(map.values())
+
+          if (!held.length) {
+            return <div className="text-muted">{t.orders.youHaveNoTables}</div>
+          }
+          const showBillForTable = (tableId) => {
+            // find newest open order for this table
+            const order = openOrders.find(o => (o.tableId === tableId))
+            if (!order) return
+            const table = (allTables || []).find(t => (t.id || t._id) === tableId)
+            const orderForBill = {
+              id: order.id || order._id,
+              table,
+              guestCount: order.guestCount,
+              items: (order.items || []).map(it => ({ name: it.name, quantity: it.quantity, unitPrice: it.unitPrice })),
+              totalAmount: order.totalAmount,
+              createdAt: order.createdAt,
+              paymentStatus: order.paymentStatus || (order.paidAt ? 'PAID' : 'UNPAID'),
+            }
+            navigate('/bill', { state: { order: orderForBill } })
+          }
+          return (
+            <ul className="list-group">
+              {held.map(tb => (
+                <li
+                  role="button"
+                  className="list-group-item d-flex justify-content-between align-items-center"
+                  key={tb.id || tb._id}
+                  onClick={() => showBillForTable(tb.id || tb._id)}
+                >
+                  <span>
+                    {(tb.name || tb.tableNumber || 'Table')} - {tb.status}
+                  </span>
+                  <span className="text-primary">Xem bill</span>
+                </li>
+              ))}
+            </ul>
+          )
+        })()}
       </div>
 
       {!myOrders.length ? (
@@ -173,23 +227,36 @@ export default function Orders() {
           <table className="table table-striped">
             <thead>
               <tr>
-                <th>{t.orders.code}</th>
                 <th>{t.orders.table}</th>
                 <th>{t.orders.status}</th>
-                <th>{t.orders.payment}</th>
                 <th>{t.orders.time}</th>
+                <th>{t.bill.total}</th>
               </tr>
             </thead>
             <tbody>
-              {myOrders.map(o => (
-                <tr key={o.id || o._id}>
-                  <td>{o.id || o._id}</td>
-                  <td>{tableName(o.tableId)}</td>
-                  <td>{o.fulfillmentStatus || o.status}</td>
-                  <td>{o.paymentStatus || (o.paidAt ? 'PAID' : 'UNPAID')}</td>
-                  <td>{new Date(o.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
+              {myOrders.map(o => {
+                const showBill = () => {
+                  const table = (allTables || []).find(t => (t.id || t._id) === o.tableId)
+                  const orderForBill = {
+                    id: o.id || o._id,
+                    table,
+                    guestCount: o.guestCount,
+                    items: (o.items || []).map(it => ({ name: it.name, quantity: it.quantity, unitPrice: it.unitPrice })),
+                    totalAmount: o.totalAmount,
+                    createdAt: o.createdAt,
+                    paymentStatus: o.paymentStatus || (o.paidAt ? 'PAID' : 'UNPAID'),
+                  }
+                  navigate('/bill', { state: { order: orderForBill } })
+                }
+                return (
+                  <tr key={o.id || o._id} role="button" onClick={showBill}>
+                    <td>{tableName(o.tableId)}</td>
+                    <td>{o.fulfillmentStatus || o.status}</td>
+                    <td>{new Date(o.createdAt).toLocaleString()}</td>
+                    <td>{Number(o.totalAmount || 0).toLocaleString()}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

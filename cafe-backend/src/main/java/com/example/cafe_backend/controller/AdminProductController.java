@@ -36,4 +36,10 @@ public class AdminProductController {
     public ResponseEntity<Product> update(@PathVariable String id, @RequestBody ProductRequest req) {
         return ResponseEntity.ok(productService.update(id, req));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -7,6 +7,8 @@ export default function Products() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', description: '', price: 0, available: true })
+  const [editingId, setEditingId] = useState('')
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: 0, available: true })
 
   const load = async () => {
     setLoading(true)
@@ -32,6 +34,40 @@ export default function Products() {
   const toggleAvailable = async (p) => {
     try {
       await api.updateProduct(p.id || p._id, { available: !p.available })
+      await load()
+    } catch (e) { setError(e.message) }
+  }
+
+  const startEdit = (p) => {
+    setEditingId(p.id || p._id)
+    setEditForm({
+      name: p.name || '',
+      description: p.description || '',
+      price: p.price || 0,
+      available: !!p.available,
+    })
+  }
+
+  const saveEdit = async (e) => {
+    e.preventDefault()
+    try {
+      await api.updateProduct(editingId, {
+        name: editForm.name,
+        description: editForm.description,
+        price: Number(editForm.price),
+        available: editForm.available,
+      })
+      setEditingId('')
+      await load()
+    } catch (e) { setError(e.message) }
+  }
+
+  const cancelEdit = () => { setEditingId('') }
+
+  const onDelete = async (p) => {
+    if (!confirm(`Xóa sản phẩm "${p.name}"?`)) return
+    try {
+      await api.deleteProduct(p.id || p._id)
       await load()
     } catch (e) { setError(e.message) }
   }
@@ -69,25 +105,52 @@ export default function Products() {
       </form>
 
       <div className="row g-3">
-        {list.map(p => (
-          <div key={p.id || p._id} className="col-sm-6 col-md-4 col-lg-3">
-            <div className="card h-100">
-              <div className="card-body">
-                <h5 className="card-title d-flex justify-content-between align-items-center">
-                  <span>{p.name}</span>
-                  <span className={`badge ${p.available ? 'bg-success' : 'bg-secondary'}`}>{p.available ? 'Available' : 'Unavailable'}</span>
-                </h5>
-                <h6 className="card-subtitle mb-2 text-muted">{p.price}</h6>
-                <p className="card-text">{p.description}</p>
-              </div>
-              <div className="card-footer bg-transparent border-top-0">
-                <button className="btn btn-outline-secondary btn-sm" onClick={() => toggleAvailable(p)}>
-                  Set {p.available ? 'Unavailable' : 'Available'}
-                </button>
+        {list.map(p => {
+          const isEditing = (editingId === (p.id || p._id))
+          return (
+            <div key={p.id || p._id} className="col-sm-6 col-md-4 col-lg-3">
+              <div className="card h-100">
+                <div className="card-body">
+                  {isEditing ? (
+                    <form onSubmit={saveEdit} className="d-flex flex-column gap-2">
+                      <input className="form-control" placeholder="Name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                      <input className="form-control" placeholder="Description" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                      <input className="form-control" type="number" placeholder="Price" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} />
+                      <div className="form-check">
+                        <input id={`avail_${p.id || p._id}`} className="form-check-input" type="checkbox" checked={editForm.available} onChange={e => setEditForm({ ...editForm, available: e.target.checked })} />
+                        <label htmlFor={`avail_${p.id || p._id}`} className="form-check-label">Available</label>
+                      </div>
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-primary btn-sm" type="submit">Save</button>
+                        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={cancelEdit}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <h5 className="card-title d-flex justify-content-between align-items-center">
+                        <span>{p.name}</span>
+                        <span className={`badge ${p.available ? 'bg-success' : 'bg-secondary'}`}>{p.available ? 'Available' : 'Unavailable'}</span>
+                      </h5>
+                      <h6 className="card-subtitle mb-2 text-muted">{p.price}</h6>
+                      <p className="card-text">{p.description}</p>
+                    </>
+                  )}
+                </div>
+                <div className="card-footer bg-transparent border-top-0 d-flex gap-2">
+                  {!isEditing && (
+                    <>
+                      <button className="btn btn-outline-secondary btn-sm" onClick={() => toggleAvailable(p)}>
+                        Set {p.available ? 'Unavailable' : 'Available'}
+                      </button>
+                      <button className="btn btn-outline-primary btn-sm" onClick={() => startEdit(p)}>Edit</button>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => onDelete(p)}>Delete</button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
