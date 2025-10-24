@@ -4,7 +4,7 @@ pipeline {
   environment {
     REGISTRY_CRED = credentials('dockerhub') // configure in Jenkins
     REGISTRY = 'docker.io'
-    REPO = 'your-dockerhub-username' // TODO: change to your Docker Hub user/org
+    REPO = 'duongle2002' // TODO: change to your Docker Hub user/org
     IMAGE_BACKEND = "${REPO}/cafe-backend"
     IMAGE_FRONTEND = "${REPO}/cafe-frontend"
   }
