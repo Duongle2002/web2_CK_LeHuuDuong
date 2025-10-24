@@ -1,0 +1,60 @@
+name: Deploy to server (Docker Compose)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment label (optional)'
+        required: false
+        default: 'production'
+
+env:
+  IMAGE_BACKEND: ghcr.io/${{ github.repository }}/cafe-backend:latest
+  IMAGE_FRONTEND: ghcr.io/${{ github.repository }}/cafe-frontend:latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Render .env.production
+        run: |
+          cat > .env.production <<EOF
+          BACKEND_IMAGE=${{ env.IMAGE_BACKEND }}
+          FRONTEND_IMAGE=${{ env.IMAGE_FRONTEND }}
+          MONGODB_URI=${{ secrets.PROD_MONGODB_URI }}
+          MONGO_PORT=27017
+          JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
+          JWT_EXP_MS=86400000
+          HTTP_PORT=8080
+          FRONTEND_PORT=80
+          EOF
+
+      - name: Copy compose and env to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          source: "compose.production.yml,.env.production"
+          target: "/opt/cafe"
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            set -e
+            sudo mkdir -p /opt/cafe
+            sudo chown -R $USER:$USER /opt/cafe
+            cd /opt/cafe
+            echo "Logging in to GHCR..."
+            echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+            docker compose -f compose.production.yml --env-file .env.production pull
+            docker compose -f compose.production.yml --env-file .env.production up -d --remove-orphans
