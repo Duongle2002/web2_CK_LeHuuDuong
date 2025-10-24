@@ -1,0 +1,8 @@
+target
+.mvn
+**/node_modules
+**/.DS_Store
+**/.env
+**/.idea
+**/.vscode
+**/.git

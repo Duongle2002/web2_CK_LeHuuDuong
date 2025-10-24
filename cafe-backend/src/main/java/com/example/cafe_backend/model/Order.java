@@ -27,6 +27,8 @@ import lombok.NoArgsConstructor;
     // Optimize reporting queries (match by status + date ranges)
     @CompoundIndex(name = "status_createdAt_idx", def = "{status: 1, createdAt: 1}"),
     @CompoundIndex(name = "status_paidAt_idx", def = "{status: 1, paidAt: 1}"),
+    // New: optimize queries matching by paymentStatus + paidAt
+    @CompoundIndex(name = "paymentStatus_paidAt_idx", def = "{paymentStatus: 1, paidAt: 1}"),
     // Optimize top-products report (unwind items then match productId)
     @CompoundIndex(name = "status_createdAt_items_product_idx", def = "{status: 1, createdAt: 1, 'items.productId': 1}")
 })

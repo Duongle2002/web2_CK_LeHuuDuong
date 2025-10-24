@@ -11,6 +11,7 @@ public class ProductRequest {
     @NotBlank
     private String name;
     private String description;
+    private String imageUrl;
 
     @Min(0)
     private BigDecimal price;

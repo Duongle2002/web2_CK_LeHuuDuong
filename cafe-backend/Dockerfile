@@ -15,9 +15,10 @@ COPY --from=build /app/target/*-SNAPSHOT.jar /app/app.jar
 
 # Default envs (override in runtime/compose)
 # Note: Spring will map these to properties
-ENV SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/cafe-backend \
-    APP_JWTSECRET=changemechangemechangemechangemechangeme \
+ENV SPRING_DATA_MONGODB_URI=mongodb+srv://huuduongle2002:Duongmb8602@cluster0.andq2.mongodb.net/cafe-backend \
+    APP_JWTSECRET=9u8f7e6d5c4b3a29z1y0xwvuTSrQpLmNqR2t4y6u8i0oPqRs \
     APP_JWTEXPIRATIONMS=86400000
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]
+

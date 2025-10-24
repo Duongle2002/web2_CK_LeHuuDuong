@@ -30,9 +30,9 @@ public interface OrderRepository extends MongoRepository<Order, String> {
 
     List<Order> findByPaymentStatusNotOrderByCreatedAtDesc(PaymentStatus status);
 
-    // Aggregation báo cáo doanh thu/ngày (đã thanh toán)
+    // Aggregation báo cáo doanh thu/ngày (đã thanh toán) - tính theo thời điểm thanh toán (paidAt)
     @Aggregation(pipeline = {
-        "{ '$match': { 'status': 'PAID', 'createdAt': { '$gte': ?0, '$lt': ?1 } } }",
+        "{ '$match': { 'paymentStatus': 'PAID', 'paidAt': { '$gte': ?0, '$lt': ?1 } } }",
         "{ '$group': { '_id': null, " +
             "'totalRevenue': { '$sum': { '$convert': { 'input': '$totalAmount', 'to': 'decimal', 'onError': 0, 'onNull': 0 } } }, " +
             "'ordersCount': { '$sum': 1 }, " +
@@ -46,9 +46,9 @@ public interface OrderRepository extends MongoRepository<Order, String> {
         long getGuests();
     }
 
-    // Tổng hợp theo khoảng ngày (start/end) - có thể dùng chung với daily nhưng cho rõ ràng
+    // Tổng hợp theo khoảng ngày (start/end) - tính theo paidAt
     @Aggregation(pipeline = {
-        "{ '$match': { 'status': 'PAID', 'createdAt': { '$gte': ?0, '$lt': ?1 } } }",
+        "{ '$match': { 'paymentStatus': 'PAID', 'paidAt': { '$gte': ?0, '$lt': ?1 } } }",
         "{ '$group': { '_id': null, " +
             "'totalRevenue': { '$sum': { '$convert': { 'input': '$totalAmount', 'to': 'decimal', 'onError': 0, 'onNull': 0 } } }, " +
             "'ordersCount': { '$sum': 1 }, " +
@@ -62,9 +62,9 @@ public interface OrderRepository extends MongoRepository<Order, String> {
         long getGuests();
     }
 
-    // Top sản phẩm bán chạy trong khoảng thời gian theo số lượng và doanh thu
+    // Top sản phẩm bán chạy trong khoảng thời gian theo số lượng và doanh thu - tính theo paidAt
     @Aggregation(pipeline = {
-        "{ '$match': { 'status': 'PAID', 'createdAt': { '$gte': ?0, '$lt': ?1 } } }",
+        "{ '$match': { 'paymentStatus': 'PAID', 'paidAt': { '$gte': ?0, '$lt': ?1 } } }",
         "{ '$unwind': '$items' }",
         "{ '$group': { _id: { productId: '$items.productId', name: '$items.name' }, " +
             "quantity: { $sum: { $convert: { input: '$items.quantity', to: 'int', onError: 0, onNull: 0 } } }, " +
@@ -81,4 +81,7 @@ public interface OrderRepository extends MongoRepository<Order, String> {
         long getQuantity();
         java.math.BigDecimal getRevenue();
     }
+
+    // Maintenance: find orders paid but missing paidAt (older data)
+    List<Order> findByPaymentStatusAndPaidAtIsNull(PaymentStatus paymentStatus);
 }

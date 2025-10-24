@@ -223,6 +223,14 @@ export default function Home() {
                 {products.map(p => (
                   <div className="col" key={p.id || p._id}>
                     <div className="card h-100">
+                      <img
+                        src={p.imageUrl || '/placeholder-drink.svg'}
+                        alt={p.name}
+                        className="card-img-top"
+                        style={{objectFit:'cover',height:160}}
+                        loading="lazy"
+                        onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/placeholder-drink.svg' }}
+                      />
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title">{p.name}</h5>
                         <p className="card-text small text-muted">{p.description}</p>

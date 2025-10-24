@@ -35,6 +35,9 @@ public class Product {
     @Builder.Default
     private boolean available = true;
 
+    // Optional image URL for product thumbnail
+    private String imageUrl;
+
     // timestamps
     @Builder.Default
     private Instant createdAt = Instant.now();

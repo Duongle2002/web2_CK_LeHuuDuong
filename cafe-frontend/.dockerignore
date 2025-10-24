@@ -1,4 +1,11 @@
 node_modules
+dist
+.vite
+**/.DS_Store
+**/.idea
+**/.vscode
+**/.env*
+**/.gitnode_modules
 .vite
 .dist
 build

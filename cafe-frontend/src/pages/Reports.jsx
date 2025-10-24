@@ -30,9 +30,21 @@ export default function Reports() {
 
   if (!isAdmin) return <div className="alert alert-danger">Permission denied</div>
 
+  const onBackfill = async () => {
+    try {
+      const res = await api.backfillPaidAt()
+      // Reload both reports afterwards
+      await Promise.all([loadDaily(), loadRange()])
+      alert(`Hoàn tất đồng bộ paidAt: ${res}`)
+    } catch (e) { setError(e.message) }
+  }
+
   return (
     <div>
-      <h2 className="mb-3">Báo cáo</h2>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h2 className="mb-0">Báo cáo</h2>
+        <button className="btn btn-outline-secondary btn-sm" onClick={onBackfill}>Đồng bộ paidAt</button>
+      </div>
       {!!error && <div className="alert alert-danger">{error}</div>}
 
       <div className="row g-3 mb-3">

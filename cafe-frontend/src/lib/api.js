@@ -74,5 +74,6 @@ export function createApi(getToken) {
   dailyReport: (date, zone) => request(`/api/admin/reports/daily?date=${date}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`),
   rangeReport: (start, end, zone) => request(`/api/admin/reports/range?start=${start}&end=${end}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`),
   topProducts: (start, end, limit = 10, zone) => request(`/api/admin/reports/top-products?start=${start}&end=${end}&limit=${limit}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`),
+  backfillPaidAt: () => request('/api/admin/reports/maintenance/backfill-paidAt', { method: 'POST' }),
   }
 }

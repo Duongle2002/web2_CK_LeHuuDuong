@@ -26,6 +26,7 @@ public class ProductService {
         Product p = Product.builder()
                 .name(req.getName())
                 .description(req.getDescription())
+        .imageUrl(req.getImageUrl())
                 .price(req.getPrice())
                 .available(req.getAvailable() == null ? true : req.getAvailable())
                 .build();
@@ -50,6 +51,7 @@ public class ProductService {
             p.setName(req.getName());
         }
         if (req.getDescription() != null) p.setDescription(req.getDescription());
+        if (req.getImageUrl() != null) p.setImageUrl(req.getImageUrl());
         if (req.getPrice() != null) p.setPrice(req.getPrice());
         if (req.getAvailable() != null) p.setAvailable(req.getAvailable());
         p.setUpdatedAt(Instant.now());

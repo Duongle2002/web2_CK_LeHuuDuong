@@ -47,4 +47,11 @@ public class AdminReportController {
         ZoneId z = zone == null ? ZoneId.systemDefault() : ZoneId.of(zone);
         return ResponseEntity.ok(reportService.topProducts(s, e, z, limit));
     }
+
+    // Admin maintenance: backfill missing paidAt for legacy paid orders
+    @PostMapping("/maintenance/backfill-paidAt")
+    public ResponseEntity<String> backfillPaidAt() {
+        long fixed = reportService.backfillPaidAt();
+        return ResponseEntity.ok("fixed=" + fixed);
+    }
 }

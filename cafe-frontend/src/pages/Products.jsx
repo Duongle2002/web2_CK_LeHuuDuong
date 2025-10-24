@@ -6,9 +6,9 @@ export default function Products() {
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({ name: '', description: '', price: 0, available: true })
+  const [form, setForm] = useState({ name: '', description: '', imageUrl: '', price: 0, available: true })
   const [editingId, setEditingId] = useState('')
-  const [editForm, setEditForm] = useState({ name: '', description: '', price: 0, available: true })
+  const [editForm, setEditForm] = useState({ name: '', description: '', imageUrl: '', price: 0, available: true })
 
   const load = async () => {
     setLoading(true)
@@ -23,10 +23,11 @@ export default function Products() {
       await api.createProduct({
         name: form.name,
         description: form.description,
+        imageUrl: form.imageUrl,
         price: Number(form.price),
         available: form.available,
       })
-      setForm({ name: '', description: '', price: 0, available: true })
+      setForm({ name: '', description: '', imageUrl: '', price: 0, available: true })
       await load()
     } catch (e) { setError(e.message) }
   }
@@ -43,6 +44,7 @@ export default function Products() {
     setEditForm({
       name: p.name || '',
       description: p.description || '',
+      imageUrl: p.imageUrl || '',
       price: p.price || 0,
       available: !!p.available,
     })
@@ -54,6 +56,7 @@ export default function Products() {
       await api.updateProduct(editingId, {
         name: editForm.name,
         description: editForm.description,
+        imageUrl: editForm.imageUrl,
         price: Number(editForm.price),
         available: editForm.available,
       })
@@ -89,6 +92,10 @@ export default function Products() {
           <label className="form-label">Description</label>
           <input className="form-control" placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
         </div>
+        <div className="col-md-4">
+          <label className="form-label">Image URL</label>
+          <input className="form-control" placeholder="https://..." value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} />
+        </div>
         <div className="col-md-2">
           <label className="form-label">Price</label>
           <input className="form-control" placeholder="Price" type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
@@ -110,11 +117,20 @@ export default function Products() {
           return (
             <div key={p.id || p._id} className="col-sm-6 col-md-4 col-lg-3">
               <div className="card h-100">
+                <img
+                  src={p.imageUrl || '/placeholder-drink.svg'}
+                  alt={p.name}
+                  className="card-img-top"
+                  style={{objectFit:'fill',height:100}}
+                  loading="lazy"
+                  onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/placeholder-drink.svg' }}
+                />
                 <div className="card-body">
                   {isEditing ? (
                     <form onSubmit={saveEdit} className="d-flex flex-column gap-2">
                       <input className="form-control" placeholder="Name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
                       <input className="form-control" placeholder="Description" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} />
+                      <input className="form-control" placeholder="Image URL" value={editForm.imageUrl} onChange={e => setEditForm({ ...editForm, imageUrl: e.target.value })} />
                       <input className="form-control" type="number" placeholder="Price" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} />
                       <div className="form-check">
                         <input id={`avail_${p.id || p._id}`} className="form-check-input" type="checkbox" checked={editForm.available} onChange={e => setEditForm({ ...editForm, available: e.target.checked })} />
