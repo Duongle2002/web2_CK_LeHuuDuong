@@ -7,8 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_BACKEND: ${{ github.repository }}/cafe-backend
-  IMAGE_FRONTEND: ${{ github.repository }}/cafe-frontend
+  # IMAGE_* will be computed in a step to ensure lowercase (GHCR requires lowercase repo paths)
 
 jobs:
   build:
@@ -19,6 +18,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Compute image names (lowercase)
+        run: |
+          OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}
+          echo "IMAGE_OWNER=${OWNER_LC}" >> $GITHUB_ENV
+          echo "IMAGE_BACKEND=${OWNER_LC}/cafe-backend" >> $GITHUB_ENV
+          echo "IMAGE_FRONTEND=${OWNER_LC}/cafe-frontend" >> $GITHUB_ENV
 
       - name: Login to GHCR
         uses: docker/login-action@v3
