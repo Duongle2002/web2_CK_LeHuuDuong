@@ -30,7 +30,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/tables/**").permitAll() // cho khách xem/đặt bàn nếu muốn mở
+                .requestMatchers("/api/tables/**").permitAll() 
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
         );
