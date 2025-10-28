@@ -14,10 +14,12 @@ WORKDIR /app
 COPY --from=build /app/target/*-SNAPSHOT.jar /app/app.jar
 
 # Default envs (override in runtime/compose)
-# Note: Spring will map these to properties
-ENV SPRING_DATA_MONGODB_URI=mongodb+srv://huuduongle2002:Duongmb8602@cluster0.andq2.mongodb.net/cafe-backend \
-    APP_JWTSECRET=9u8f7e6d5c4b3a29z1y0xwvuTSrQpLmNqR2t4y6u8i0oPqRs \
-    APP_JWTEXPIRATIONMS=86400000
+# NOTE: Do NOT hardcode secrets (DB URIs, JWT secrets) in Dockerfile. Provide them at runtime
+# via environment (.env.production), Docker secrets, or your orchestration system.
+# Example (set in your compose file or CI/CD):
+# SPRING_DATA_MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db>
+# APP_JWTSECRET=<your-jwt-secret>
+ENV APP_JWTEXPIRATIONMS=86400000
 
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app/app.jar"]
